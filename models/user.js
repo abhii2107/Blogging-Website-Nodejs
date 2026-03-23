@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose")
-const { createHmac, randomBytes } = require("crypto")
+const { createHmac, randomBytes } = require("crypto");
+const { createTokenForUSer } = require("../services/authentication");
 
 const userSchema = new Schema({
     FullName: {
@@ -47,7 +48,7 @@ userSchema.pre('save', function(){
 })
 
 // virtual funv=ction for sign in
-userSchema.static('matchPassword',async function(email,password){
+userSchema.static('matchPasswordAndGenerateToken',async function(email,password){
     const user = await this.findOne({email});
     if(!user) throw new Error('user not found');
 
@@ -56,9 +57,12 @@ userSchema.static('matchPassword',async function(email,password){
 
     const userProvidedHash = createHmac('sha256', salt).update(password).digest("hex")
 
-    if(hashPassword != userProvidedHash)throw new Error('Incorrect Password')
-    return user;
-  
+    if(hashPassword !== userProvidedHash)throw new Error('Incorrect Password')
+   
+    //  return user; ##instead of retutning use r we will retutn the Token##
+    const token = createTokenForUSer(user)
+    return token;
+    
 })
 
 const User = model('user', userSchema)
